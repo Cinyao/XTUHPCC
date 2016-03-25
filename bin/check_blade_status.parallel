@@ -1,0 +1,73 @@
+#!/usr/bin/env bash
+#--------------------CopyRight--------------------------#
+#           Name: check_blade_status.parallel
+#         Author: Tonyao
+# Version Number: 1.01
+#           Date: 2014-06-28
+#         Update: 2016-01-08
+#          Email: tonyaoge@gmail.com 
+#-------------------------------------------------------#
+for chassis in `seq -w 07`;do {
+if [ ${chassis} -lt 7 ];then
+for blade   in `seq -w 01 14`;do {
+node="c${chassis}n${blade}"
+if ping -c 3 -i 0.2 -w 1 ${node}  >&/dev/null;then
+#res=`ssh ${node} ps aux | sort -nk +5 | tail -n 120 | awk '{ if($3>35)print $3,$11}' |  sed 's/.*\/\([a-z].*$\)/The \1/'| nl | sed -n '$p'`
+res=`ssh ${node} ps aux | sort -nk +5 | tail -n 120 | awk '{ if($3>35)print $3,$11,$1}' |  awk 'BEGIN{total_cpus=0}{total_cpus+=$1}END{printf "%d %d %s %s\n",NR,int(total_cpus/100)+1,$2,$3}' | sed 's/\/.*\///g'`
+proc_num=`echo ${res} | awk '{print $1}'`
+cpu_num=`echo ${res} | awk '{print $2}'`
+run_task=`echo ${res} | awk '{print $3}'`
+run_user=`echo ${res} | awk '{print $4}'`
+if [ "${proc_num}" -ne 0 ]
+then
+#proc_num=`echo ${res} | awk '{print $1}'`
+#cpu_num=`echo ${res} | awk '{print $1}'`
+#run_task=`echo ${res} | awk '{print $3}'`
+if [ ${cpu_num} -eq 0 ]
+then
+echo -e "\033[1m ${node}:\033[0m\033[1;32m idle \033[0m"
+#elif [ ${cpu_num} -lt 10 ];then
+#echo  -e  "\033[1m ${node}:\033[0m The\033[1;32m ${run_task}\033[0m program occupies \033[1;5;31m${cpu_num} \033[0m cpu core(s)." 
+else
+#echo  -e  "\033[1m ${node}(${run_user}):\033[0m The\033[1;32m ${run_task}\033[0m program occupies \033[1;5;31m${cpu_num}\033[0m cpu core(s), with \033[1;5;31m${proc_num} \033[0m process(es)." 
+echo  -e  "\033[1;4m${node}\033[0m<\033[1;36m${run_user}\033[0m>: The\033[1;32m ${run_task}\033[0m program occupies \033[1;5;31m${cpu_num}\033[0m cpu core(s), with \033[1;5;31m${proc_num} \033[0m process(es)." 
+fi
+else
+echo -e "\033[1m ${node}:\033[0m\033[1;32m idle \033[0m"
+fi
+else
+echo -e "\033[1m ${node}:\033[0m \033[1;4;35mnoping\033[0m"
+fi
+} & done
+wait
+else
+for blade in `seq -w 09`;do {
+node1="c${chassis}n${blade}"
+if ping -c 3 -i 0.2 -w 1 ${node1}  >&/dev/null;then
+#res=`ssh ${node1} ps aux | sort -nk +5 | tail -n 120 | awk '{ if($3>35)print $11}' |  sed 's/.*\/\([a-z].*$\)/The \1/'| nl | sed -n '$p'`
+res=`ssh ${node1} ps aux | sort -nk +5 | tail -n 120 | awk '{ if($3>35)print $3,$11,$1}' |  awk 'BEGIN{total_cpus=0}{total_cpus+=$1}END{printf "%d %d %s %s\n",NR,int(total_cpus/100)+1,$2,$3}' | sed 's/\/.*\///g'`
+proc_num=`echo ${res} | awk '{print $1}'`
+cpu_num=`echo ${res} | awk '{print $2}'`
+run_task=`echo ${res} | awk '{print $3}'`
+run_user=`echo ${res} | awk '{print $4}'`
+#res=`ssh ${node1} ps aux | sort -nk +5 | tail -n 120 | awk '{ if($3>35)print $3,$11}' |  awk 'BEGIN{total_cpus=0}{total_cpus+=$1}END{printf "%d %d %s\n",NR,int(total_cpus/100)+1,$2}'`
+if [ "${proc_num}" -ne 0 ]
+then
+#proc_num=`echo ${res} | awk '{print $1}'`
+if [ ${cpu_num} -eq 0 ]
+then
+echo -e "\033[1m ${node1}:\033[0m\033[1;32m idle \033[0m"
+else
+#echo  -e  "\033[1m ${node1}:\033[0m The\033[1;32m ${run_task}\033[0m program occupies \033[1;5;31m${cpu_num}\033[0m cpu core(s)." 
+#echo  -e  "\033[1m ${node1}(${run_user}):\033[0m The\033[1;32m ${run_task}\033[0m program occupies \033[1;5;31m${cpu_num}\033[0m cpu core(s), with \033[1;5;31m${proc_num} \033[0m process(es)." 
+echo  -e  "\033[1;4m${node1}\033[0m<\033[1;36m${run_user}\033[0m>: The\033[1;32m ${run_task}\033[0m program occupies \033[1;5;31m${cpu_num}\033[0m cpu core(s), with \033[1;5;31m${proc_num} \033[0m process(es)." 
+fi
+else
+echo -e "\033[1m ${node1}:\033[0m\033[1;32m idle \033[0m"
+fi
+else
+echo -e "\033[1m ${node1}:\033[0m \033[1;4;35mnoping\033[0m"
+fi } & done
+wait
+fi } & done
+wait
